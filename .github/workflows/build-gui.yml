@@ -1,0 +1,46 @@
+name: build-gui
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "desktop/**"
+      - "scripts/publish-gui.ps1"
+      - ".github/workflows/build-gui.yml"
+
+jobs:
+  build-windows-gui:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Run Node tests
+        run: npm test
+
+      - name: Run .NET tests
+        run: dotnet test desktop/CodexProviderSync.Core.Tests/CodexProviderSync.Core.Tests.csproj --configuration Release
+
+      - name: Publish Windows GUI
+        shell: pwsh
+        run: ./scripts/publish-gui.ps1 -Configuration Release -Runtime win-x64 -Output artifacts/win-x64
+
+      - name: Upload Windows GUI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CodexProviderSync-win-x64
+          path: artifacts/win-x64/**
+          if-no-files-found: error
