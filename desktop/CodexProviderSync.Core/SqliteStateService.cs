@@ -11,9 +11,36 @@ public sealed class SqliteStateService
         SQLitePCL.Batteries_V2.Init();
     }
 
-    public string StateDbPath(string codexHome)
+    public static string PreferredStateDbPath(string codexHome)
+    {
+        return Path.Combine(codexHome, AppConstants.DbSubdir, AppConstants.DbFileBasename);
+    }
+
+    public static string LegacyStateDbPath(string codexHome)
     {
         return Path.Combine(codexHome, AppConstants.DbFileBasename);
+    }
+
+    public static string ResolveStateDbPath(string codexHome)
+    {
+        string preferredPath = PreferredStateDbPath(codexHome);
+        if (File.Exists(preferredPath))
+        {
+            return preferredPath;
+        }
+
+        string legacyPath = LegacyStateDbPath(codexHome);
+        if (File.Exists(legacyPath))
+        {
+            return legacyPath;
+        }
+
+        return preferredPath;
+    }
+
+    public string StateDbPath(string codexHome)
+    {
+        return ResolveStateDbPath(codexHome);
     }
 
     public async Task<ProviderCounts?> ReadSqliteProviderCountsAsync(string codexHome)
