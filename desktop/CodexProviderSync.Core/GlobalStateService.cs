@@ -18,7 +18,7 @@ public sealed class GlobalStateService
 
     public async Task<IReadOnlyList<ThreadCwdStat>> ReadThreadCwdStatsAsync(string codexHome)
     {
-        string dbPath = Path.Combine(codexHome, AppConstants.DbFileBasename);
+        string dbPath = SqliteStateService.ResolveStateDbPath(codexHome);
         if (!File.Exists(dbPath))
         {
             return [];
@@ -191,7 +191,7 @@ public sealed class GlobalStateService
             return [];
         }
 
-        string dbPath = Path.Combine(codexHome, AppConstants.DbFileBasename);
+        string dbPath = SqliteStateService.ResolveStateDbPath(codexHome);
         if (!File.Exists(dbPath))
         {
             return roots
