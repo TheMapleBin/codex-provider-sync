@@ -1,13 +1,47 @@
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-import { DB_FILE_BASENAME } from "./constants.js";
+import { DB_FILE_BASENAME, DB_SUBDIR } from "./constants.js";
 
 const DEFAULT_BUSY_TIMEOUT_MS = 5000;
 
-export function stateDbPath(codexHome) {
+export function preferredStateDbPath(codexHome) {
+  return path.join(codexHome, DB_SUBDIR, DB_FILE_BASENAME);
+}
+
+export function legacyStateDbPath(codexHome) {
   return path.join(codexHome, DB_FILE_BASENAME);
+}
+
+export function stateDbPath(codexHome) {
+  const preferredPath = preferredStateDbPath(codexHome);
+  if (fsSync.existsSync(preferredPath)) {
+    return preferredPath;
+  }
+
+  const legacyPath = legacyStateDbPath(codexHome);
+  if (fsSync.existsSync(legacyPath)) {
+    return legacyPath;
+  }
+
+  return preferredPath;
+}
+
+export function stateDbPathInfo(codexHome) {
+  const preferredPath = preferredStateDbPath(codexHome);
+  const legacyPath = legacyStateDbPath(codexHome);
+  const resolvedPath = stateDbPath(codexHome);
+  return {
+    path: resolvedPath,
+    kind: resolvedPath === preferredPath ? "sqlite" : "legacy",
+    exists: fsSync.existsSync(resolvedPath),
+    preferredPath,
+    legacyPath,
+    preferredExists: fsSync.existsSync(preferredPath),
+    legacyExists: fsSync.existsSync(legacyPath)
+  };
 }
 
 function openDatabase(dbPath) {
